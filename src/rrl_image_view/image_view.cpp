@@ -74,12 +74,8 @@ void RRLImageView::initPlugin(qt_gui_cpp::PluginContext& context)
   ui_.zoom_1_push_button->setIcon(QIcon::fromTheme("zoom-original"));
   connect(ui_.zoom_1_push_button, SIGNAL(toggled(bool)), this, SLOT(onZoom1(bool)));
 
-  connect(ui_.dynamic_range_check_box, SIGNAL(toggled(bool)), this, SLOT(onDynamicRange(bool)));
-
   ui_.save_as_image_push_button->setIcon(QIcon::fromTheme("document-save-as"));
   connect(ui_.save_as_image_push_button, SIGNAL(pressed()), this, SLOT(saveImage()));
-
-  connect(ui_.num_gridlines_spin_box, SIGNAL(valueChanged(int)), this, SLOT(updateNumGridlines()));
 
   // set topic name if passed in as argument
   const QStringList& argv = context.argv();
@@ -131,18 +127,10 @@ void RRLImageView::saveSettings(qt_gui_cpp::Settings& plugin_settings, qt_gui_cp
 {
   (void)plugin_settings;
   QString topic = ui_.topics_combo_box->currentText();
-  //qDebug("RRLImageView::saveSettings() topic '%s'", topic.toStdString().c_str());
   instance_settings.setValue("topic", topic);
   instance_settings.setValue("zoom1", ui_.zoom_1_push_button->isChecked());
-  instance_settings.setValue("dynamic_range", ui_.dynamic_range_check_box->isChecked());
-  instance_settings.setValue("max_range", ui_.max_range_double_spin_box->value());
-  // instance_settings.setValue("publish_click_location", ui_.publish_click_location_check_box->isChecked());
-  // instance_settings.setValue("mouse_pub_topic", ui_.publish_click_location_topic_line_edit->text());
   instance_settings.setValue("toolbar_hidden", hide_toolbar_action_->isChecked());
-  instance_settings.setValue("num_gridlines", ui_.num_gridlines_spin_box->value());
-  // instance_settings.setValue("smooth_image", ui_.smooth_image_check_box->isChecked());
   instance_settings.setValue("rotate", rotate_state_);
-  // instance_settings.setValue("color_scheme", ui_.color_scheme_combo_box->currentIndex());
 }
 
 void RRLImageView::restoreSettings(const qt_gui_cpp::Settings& plugin_settings, const qt_gui_cpp::Settings& instance_settings)
@@ -150,15 +138,6 @@ void RRLImageView::restoreSettings(const qt_gui_cpp::Settings& plugin_settings, 
   (void)plugin_settings;
   bool zoom1_checked = instance_settings.value("zoom1", false).toBool();
   ui_.zoom_1_push_button->setChecked(zoom1_checked);
-
-  bool dynamic_range_checked = instance_settings.value("dynamic_range", false).toBool();
-  ui_.dynamic_range_check_box->setChecked(dynamic_range_checked);
-
-  double max_range = instance_settings.value("max_range", ui_.max_range_double_spin_box->value()).toDouble();
-  ui_.max_range_double_spin_box->setValue(max_range);
-
-  num_gridlines_ = instance_settings.value("num_gridlines", ui_.num_gridlines_spin_box->value()).toInt();
-  ui_.num_gridlines_spin_box->setValue(num_gridlines_);
 
   QString topic = instance_settings.value("topic", "").toString();
   // don't overwrite topic name passed as command line argument
@@ -349,21 +328,21 @@ void RRLImageView::onZoom1(bool checked)
     }
     ui_.image_frame->setInnerFrameFixedSize(ui_.image_frame->getImage().size());
   } else {
-    ui_.image_frame->setInnerFrameMinimumSize(QSize(80, 60));
+    ui_.image_frame->setInnerFrameMinimumSize(QSize(320, 240));
     ui_.image_frame->setMaximumSize(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
-    widget_->setMinimumSize(QSize(80, 60));
+    widget_->setMinimumSize(QSize(320, 240));
     widget_->setMaximumSize(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
   }
 }
 
 void RRLImageView::onDynamicRange(bool checked)
 {
-  ui_.max_range_double_spin_box->setEnabled(!checked);
+  // ui_.max_range_double_spin_box->setEnabled(!checked);
 }
 
 void RRLImageView::updateNumGridlines()
 {
-  num_gridlines_ = ui_.num_gridlines_spin_box->value();
+  // num_gridlines_ = ui_.num_gridlines_spin_box->value();
 }
 
 void RRLImageView::saveImage()
@@ -446,7 +425,7 @@ void RRLImageView::onPubTopicChanged()
 
 void RRLImageView::onHideToolbarChanged(bool hide)
 {
-  ui_.toolbar_widget->setVisible(!hide);
+  // ui_.toolbar_widget->setVisible(!hide);
 }
 
 void RRLImageView::onRotateLeft()
@@ -576,18 +555,19 @@ void RRLImageView::callbackImage(const sensor_msgs::msg::Image::ConstSharedPtr& 
       } else if (msg->encoding == "16UC1" || msg->encoding == "32FC1") {
         // scale / quantify
         double min = 0;
-        double max = ui_.max_range_double_spin_box->value();
+        // double max = ui_.max_range_double_spin_box->value();
+        double max = 2;
         if (msg->encoding == "16UC1") max *= 1000;
-        if (ui_.dynamic_range_check_box->isChecked())
-        {
-          // dynamically adjust range based on min/max in image
-          cv::minMaxLoc(cv_ptr->image, &min, &max);
-          if (min == max) {
-            // completely homogeneous images are displayed in gray
-            min = 0;
-            max = 2;
-          }
-        }
+        // if (ui_.dynamic_range_check_box->isChecked())
+        // {
+        //   // dynamically adjust range based on min/max in image
+        //   cv::minMaxLoc(cv_ptr->image, &min, &max);
+        //   if (min == max) {
+        //     // completely homogeneous images are displayed in gray
+        //     min = 0;
+        //     max = 2;
+        //   }
+        // }
         cv::Mat img_scaled_8u;
         cv::Mat(cv_ptr->image-min).convertTo(img_scaled_8u, CV_8UC1, 255. / (max - min));
         cv::cvtColor(img_scaled_8u, conversion_mat_, CV_GRAY2RGB);
