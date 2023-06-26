@@ -30,8 +30,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef rqt_image_view__RatioLayoutedFrame_H
-#define rqt_image_view__RatioLayoutedFrame_H
+#ifndef rrl_image_view__RatioLayoutedFrame_H
+#define rrl_image_view__RatioLayoutedFrame_H
 
 #include <QFrame>
 #include <QImage>
@@ -42,7 +42,7 @@
 #include <QRect>
 #include <QSize>
 
-namespace rqt_image_view {
+namespace rrl_image_view {
 
 /**
  * RatioLayoutedFrame is a layout containing a single frame with a fixed aspect ratio.
@@ -112,4 +112,4 @@ private:
 
 }
 
-#endif // rqt_image_view__RatioLayoutedFrame_H
+#endif // rrl_image_view__RatioLayoutedFrame_H

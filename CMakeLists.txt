@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(rqt_image_view)
+project(rrl_image_view)
 
 find_package(ament_cmake REQUIRED)
 
 if(WIN32)
-  message(STATUS "rqt_image_view is not yet supported on Windows. Package will not be built.")
+  message(STATUS "rrl_image_view is not yet supported on Windows. Package will not be built.")
   ament_package()
   return()
 endif()
@@ -32,28 +32,28 @@ find_package(cv_bridge REQUIRED)
 find_package(Qt5Widgets REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 
-set(rqt_image_view_SRCS
-  src/rqt_image_view/image_view.cpp
-  src/rqt_image_view/ratio_layouted_frame.cpp
+set(rrl_image_view_SRCS
+  src/rrl_image_view/image_view.cpp
+  src/rrl_image_view/ratio_layouted_frame.cpp
 )
 
-set(rqt_image_view_HDRS
-  include/rqt_image_view/image_view.h
-  include/rqt_image_view/ratio_layouted_frame.h
+set(rrl_image_view_HDRS
+  include/rrl_image_view/image_view.h
+  include/rrl_image_view/ratio_layouted_frame.h
 )
 
-set(rqt_image_view_UIS
-  src/rqt_image_view/image_view.ui
+set(rrl_image_view_UIS
+  src/rrl_image_view/image_view.ui
 )
 
-qt5_wrap_cpp(rqt_image_view_MOCS ${rqt_image_view_HDRS})
+qt5_wrap_cpp(rrl_image_view_MOCS ${rrl_image_view_HDRS})
 
-qt5_wrap_ui(rqt_image_view_UIS_H ${rqt_image_view_UIS})
+qt5_wrap_ui(rrl_image_view_UIS_H ${rrl_image_view_UIS})
 
 add_library(${PROJECT_NAME} SHARED
-  ${rqt_image_view_SRCS}
-  ${rqt_image_view_MOCS}
-  ${rqt_image_view_UIS_H}
+  ${rrl_image_view_SRCS}
+  ${rrl_image_view_MOCS}
+  ${rrl_image_view_UIS_H}
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -79,7 +79,7 @@ install(
   LIBRARY DESTINATION lib/${PROJECT_NAME}
   RUNTIME DESTINATION bin/${PROJECT_NAME})
 
-install(PROGRAMS scripts/rqt_image_view
+install(PROGRAMS scripts/rrl_image_view
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -30,7 +30,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rqt_image_view/image_view.h>
+#include <rrl_image_view/image_view.h>
 
 #include <pluginlib/class_list_macros.hpp>
 #include <sensor_msgs/image_encodings.hpp>
@@ -42,18 +42,18 @@
 #include <QMessageBox>
 #include <QPainter>
 
-namespace rqt_image_view {
+namespace rrl_image_view {
 
-ImageView::ImageView()
+RRLImageView::RRLImageView()
   : rqt_gui_cpp::Plugin()
   , widget_(0)
   , num_gridlines_(0)
   , rotate_state_(ROTATE_0)
 {
-  setObjectName("ImageView");
+  setObjectName("RRLImageView");
 }
 
-void ImageView::initPlugin(qt_gui_cpp::PluginContext& context)
+void RRLImageView::initPlugin(qt_gui_cpp::PluginContext& context)
 {
   widget_ = new QWidget();
   ui_.setupUi(widget_);
@@ -92,28 +92,28 @@ void ImageView::initPlugin(qt_gui_cpp::PluginContext& context)
   ui_.image_frame->setOuterLayout(ui_.image_layout);
 
   QRegExp rx("([a-zA-Z/][a-zA-Z0-9_/]*)?"); //see http://www.ros.org/wiki/ROS/Concepts#Names.Valid_Names (but also accept an empty field)
-  ui_.publish_click_location_topic_line_edit->setValidator(new QRegExpValidator(rx, this));
-  connect(ui_.publish_click_location_check_box, SIGNAL(toggled(bool)), this, SLOT(onMousePublish(bool)));
+  // ui_.publish_click_location_topic_line_edit->setValidator(new QRegExpValidator(rx, this));
+  // connect(ui_.publish_click_location_check_box, SIGNAL(toggled(bool)), this, SLOT(onMousePublish(bool)));
   connect(ui_.image_frame, SIGNAL(mouseLeft(int, int)), this, SLOT(onMouseLeft(int, int)));
-  connect(ui_.publish_click_location_topic_line_edit, SIGNAL(editingFinished()), this, SLOT(onPubTopicChanged()));
+  // connect(ui_.publish_click_location_topic_line_edit, SIGNAL(editingFinished()), this, SLOT(onPubTopicChanged()));
 
-  connect(ui_.smooth_image_check_box, SIGNAL(toggled(bool)), ui_.image_frame, SLOT(onSmoothImageChanged(bool)));
+  // connect(ui_.smooth_image_check_box, SIGNAL(toggled(bool)), ui_.image_frame, SLOT(onSmoothImageChanged(bool)));
 
-  connect(ui_.rotate_left_push_button, SIGNAL(clicked(bool)), this, SLOT(onRotateLeft()));
-  connect(ui_.rotate_right_push_button, SIGNAL(clicked(bool)), this, SLOT(onRotateRight()));
+  // connect(ui_.rotate_left_push_button, SIGNAL(clicked(bool)), this, SLOT(onRotateLeft()));
+  // connect(ui_.rotate_right_push_button, SIGNAL(clicked(bool)), this, SLOT(onRotateRight()));
 
-  // Make sure we have enough space for "XXX °"
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-  // QFontMetrics::width(QChar) is deprecated starting from qt version 5.11.0
-  // https://doc.qt.io/qt-5/qfontmetrics.html#horizontalAdvance-1
-  ui_.rotate_label->setMinimumWidth(
-    ui_.rotate_label->fontMetrics().horizontalAdvance("XXX°")
-  );
-#else
-  ui_.rotate_label->setMinimumWidth(
-    ui_.rotate_label->fontMetrics().width("XXX°")
-  );
-#endif
+//   // Make sure we have enough space for "XXX °"
+// #if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+//   // QFontMetrics::width(QChar) is deprecated starting from qt version 5.11.0
+//   // https://doc.qt.io/qt-5/qfontmetrics.html#horizontalAdvance-1
+//   ui_.rotate_label->setMinimumWidth(
+//     ui_.rotate_label->fontMetrics().horizontalAdvance("XXX°")
+//   );
+// #else
+//   ui_.rotate_label->setMinimumWidth(
+//     ui_.rotate_label->fontMetrics().width("XXX°")
+//   );
+// #endif
 
   hide_toolbar_action_ = new QAction(tr("Hide toolbar"), this);
   hide_toolbar_action_->setCheckable(true);
@@ -121,31 +121,31 @@ void ImageView::initPlugin(qt_gui_cpp::PluginContext& context)
   connect(hide_toolbar_action_, SIGNAL(toggled(bool)), this, SLOT(onHideToolbarChanged(bool)));
 }
 
-void ImageView::shutdownPlugin()
+void RRLImageView::shutdownPlugin()
 {
   subscriber_.shutdown();
   pub_mouse_left_.reset();
 }
 
-void ImageView::saveSettings(qt_gui_cpp::Settings& plugin_settings, qt_gui_cpp::Settings& instance_settings) const
+void RRLImageView::saveSettings(qt_gui_cpp::Settings& plugin_settings, qt_gui_cpp::Settings& instance_settings) const
 {
   (void)plugin_settings;
   QString topic = ui_.topics_combo_box->currentText();
-  //qDebug("ImageView::saveSettings() topic '%s'", topic.toStdString().c_str());
+  //qDebug("RRLImageView::saveSettings() topic '%s'", topic.toStdString().c_str());
   instance_settings.setValue("topic", topic);
   instance_settings.setValue("zoom1", ui_.zoom_1_push_button->isChecked());
   instance_settings.setValue("dynamic_range", ui_.dynamic_range_check_box->isChecked());
   instance_settings.setValue("max_range", ui_.max_range_double_spin_box->value());
-  instance_settings.setValue("publish_click_location", ui_.publish_click_location_check_box->isChecked());
-  instance_settings.setValue("mouse_pub_topic", ui_.publish_click_location_topic_line_edit->text());
+  // instance_settings.setValue("publish_click_location", ui_.publish_click_location_check_box->isChecked());
+  // instance_settings.setValue("mouse_pub_topic", ui_.publish_click_location_topic_line_edit->text());
   instance_settings.setValue("toolbar_hidden", hide_toolbar_action_->isChecked());
   instance_settings.setValue("num_gridlines", ui_.num_gridlines_spin_box->value());
-  instance_settings.setValue("smooth_image", ui_.smooth_image_check_box->isChecked());
+  // instance_settings.setValue("smooth_image", ui_.smooth_image_check_box->isChecked());
   instance_settings.setValue("rotate", rotate_state_);
-  instance_settings.setValue("color_scheme", ui_.color_scheme_combo_box->currentIndex());
+  // instance_settings.setValue("color_scheme", ui_.color_scheme_combo_box->currentIndex());
 }
 
-void ImageView::restoreSettings(const qt_gui_cpp::Settings& plugin_settings, const qt_gui_cpp::Settings& instance_settings)
+void RRLImageView::restoreSettings(const qt_gui_cpp::Settings& plugin_settings, const qt_gui_cpp::Settings& instance_settings)
 {
   (void)plugin_settings;
   bool zoom1_checked = instance_settings.value("zoom1", false).toBool();
@@ -168,32 +168,32 @@ void ImageView::restoreSettings(const qt_gui_cpp::Settings& plugin_settings, con
   }
   else
   {
-    //qDebug("ImageView::restoreSettings() topic '%s'", topic.toStdString().c_str());
+    //qDebug("RRLImageView::restoreSettings() topic '%s'", topic.toStdString().c_str());
     selectTopic(topic);
   }
 
   bool publish_click_location = instance_settings.value("publish_click_location", false).toBool();
-  ui_.publish_click_location_check_box->setChecked(publish_click_location);
+  // ui_.publish_click_location_check_box->setChecked(publish_click_location);
 
   QString pub_topic = instance_settings.value("mouse_pub_topic", "").toString();
-  ui_.publish_click_location_topic_line_edit->setText(pub_topic);
+  // ui_.publish_click_location_topic_line_edit->setText(pub_topic);
 
   bool toolbar_hidden = instance_settings.value("toolbar_hidden", false).toBool();
   hide_toolbar_action_->setChecked(toolbar_hidden);
 
   bool smooth_image_checked = instance_settings.value("smooth_image", false).toBool();
-  ui_.smooth_image_check_box->setChecked(smooth_image_checked);
+  // ui_.smooth_image_check_box->setChecked(smooth_image_checked);
 
   rotate_state_ = static_cast<RotateState>(instance_settings.value("rotate", 0).toInt());
   if(rotate_state_ >= ROTATE_STATE_COUNT)
     rotate_state_ = ROTATE_0;
   syncRotateLabel();
 
-  int color_scheme = instance_settings.value("color_scheme", ui_.color_scheme_combo_box->currentIndex()).toInt();
-  ui_.color_scheme_combo_box->setCurrentIndex(color_scheme);
+  // int color_scheme = instance_settings.value("color_scheme", ui_.color_scheme_combo_box->currentIndex()).toInt();
+  // ui_.color_scheme_combo_box->setCurrentIndex(color_scheme);
 }
 
-void ImageView::updateTopicList()
+void RRLImageView::updateTopicList()
 {
   QSet<QString> message_types;
   message_types.insert("sensor_msgs/Image");
@@ -208,7 +208,7 @@ void ImageView::updateTopicList()
   std::vector<std::string> declared = it.getDeclaredTransports();
   for (std::vector<std::string>::const_iterator it = declared.begin(); it != declared.end(); it++)
   {
-    //qDebug("ImageView::updateTopicList() declared transport '%s'", it->c_str());
+    //qDebug("RRLImageView::updateTopicList() declared transport '%s'", it->c_str());
     QString transport = it->c_str();
 
     // strip prefix from transport name
@@ -238,7 +238,7 @@ void ImageView::updateTopicList()
   selectTopic(selected);
 }
 
-QSet<QString> ImageView::getTopics(const QSet<QString>& message_types, const QSet<QString>& message_sub_types, const QList<QString>& transports)
+QSet<QString> RRLImageView::getTopics(const QSet<QString>& message_types, const QSet<QString>& message_sub_types, const QList<QString>& transports)
 {
   std::map<std::string, std::vector<std::string>> topic_info = node_->get_topic_names_and_types();
 
@@ -259,7 +259,7 @@ QSet<QString> ImageView::getTopics(const QSet<QString>& message_types, const QSe
 
         // add raw topic
         topics.insert(topic);
-        //qDebug("ImageView::getTopics() raw topic '%s'", topic.toStdString().c_str());
+        //qDebug("RRLImageView::getTopics() raw topic '%s'", topic.toStdString().c_str());
 
         // add transport specific sub-topics
         for (QList<QString>::const_iterator jt = transports.begin(); jt != transports.end(); jt++)
@@ -268,7 +268,7 @@ QSet<QString> ImageView::getTopics(const QSet<QString>& message_types, const QSe
           {
             QString sub = topic + " " + *jt;
             topics.insert(sub);
-            //qDebug("ImageView::getTopics() transport specific sub-topic '%s'", sub.toStdString().c_str());
+            //qDebug("RRLImageView::getTopics() transport specific sub-topic '%s'", sub.toStdString().c_str());
           }
         }
       }
@@ -280,7 +280,7 @@ QSet<QString> ImageView::getTopics(const QSet<QString>& message_types, const QSe
         {
           topic.replace(index, 1, " ");
           topics.insert(topic);
-          //qDebug("ImageView::getTopics() transport specific sub-topic '%s'", topic.toStdString().c_str());
+          //qDebug("RRLImageView::getTopics() transport specific sub-topic '%s'", topic.toStdString().c_str());
         }
       }
     }
@@ -288,7 +288,7 @@ QSet<QString> ImageView::getTopics(const QSet<QString>& message_types, const QSe
   return topics;
 }
 
-void ImageView::selectTopic(const QString& topic)
+void RRLImageView::selectTopic(const QString& topic)
 {
   int index = ui_.topics_combo_box->findText(topic);
   if (index == -1)
@@ -302,7 +302,7 @@ void ImageView::selectTopic(const QString& topic)
   ui_.topics_combo_box->setCurrentIndex(index);
 }
 
-void ImageView::onTopicChanged(int index)
+void RRLImageView::onTopicChanged(int index)
 {
   conversion_mat_.release();
 
@@ -325,20 +325,21 @@ void ImageView::onTopicChanged(int index)
       subscriber_ = image_transport::create_subscription(
         node_.get(),
         topic.toStdString(),
-        std::bind(&ImageView::callbackImage, this, std::placeholders::_1),
+        std::bind(&RRLImageView::callbackImage, this, std::placeholders::_1),
         hints.getTransport(),
         rmw_qos_profile_sensor_data,
         subscription_options);
-      qDebug("ImageView::onTopicChanged() to topic '%s' with transport '%s'", topic.toStdString().c_str(), subscriber_.getTransport().c_str());
+      onPubTopicChanged();
+      qDebug("RRLImageView::onTopicChanged() to topic '%s' with transport '%s'", topic.toStdString().c_str(), subscriber_.getTransport().c_str());
     } catch (image_transport::TransportLoadException& e) {
       QMessageBox::warning(widget_, tr("Loading image transport plugin failed"), e.what());
     }
   }
 
-  onMousePublish(ui_.publish_click_location_check_box->isChecked());
+  // onMousePublish(ui_.publish_click_location_check_box->isChecked());
 }
 
-void ImageView::onZoom1(bool checked)
+void RRLImageView::onZoom1(bool checked)
 {
   if (checked)
   {
@@ -355,17 +356,17 @@ void ImageView::onZoom1(bool checked)
   }
 }
 
-void ImageView::onDynamicRange(bool checked)
+void RRLImageView::onDynamicRange(bool checked)
 {
   ui_.max_range_double_spin_box->setEnabled(!checked);
 }
 
-void ImageView::updateNumGridlines()
+void RRLImageView::updateNumGridlines()
 {
   num_gridlines_ = ui_.num_gridlines_spin_box->value();
 }
 
-void ImageView::saveImage()
+void RRLImageView::saveImage()
 {
   // take a snapshot before asking for the filename
   QImage img = ui_.image_frame->getImageCopy();
@@ -379,12 +380,12 @@ void ImageView::saveImage()
   img.save(file_name);
 }
 
-void ImageView::onMousePublish(bool checked)
+void RRLImageView::onMousePublish(bool checked)
 {
   std::string topicName;
   if(pub_topic_custom_)
   {
-    topicName = ui_.publish_click_location_topic_line_edit->text().toStdString();
+    // topicName = ui_.publish_click_location_topic_line_edit->text().toStdString();
   } else {
     if(!subscriber_.getTopic().empty())
     {
@@ -392,7 +393,7 @@ void ImageView::onMousePublish(bool checked)
     } else {
       topicName = "mouse_left";
     }
-    ui_.publish_click_location_topic_line_edit->setText(QString::fromStdString(topicName));
+    // ui_.publish_click_location_topic_line_edit->setText(QString::fromStdString(topicName));
   }
 
   if(checked)
@@ -403,9 +404,9 @@ void ImageView::onMousePublish(bool checked)
   }
 }
 
-void ImageView::onMouseLeft(int x, int y)
+void RRLImageView::onMouseLeft(int x, int y)
 {
-  if(ui_.publish_click_location_check_box->isChecked() && !ui_.image_frame->getImage().isNull())
+  if(!ui_.image_frame->getImage().isNull())
   {
     geometry_msgs::msg::Point clickCanvasLocation;
     // Publish click location in pixel coordinates
@@ -415,40 +416,40 @@ void ImageView::onMouseLeft(int x, int y)
 
     geometry_msgs::msg::Point clickLocation = clickCanvasLocation;
 
-    switch(rotate_state_)
-    {
-      case ROTATE_90:
-        clickLocation.x = clickCanvasLocation.y;
-        clickLocation.y = ui_.image_frame->getImage().width() - clickCanvasLocation.x;
-        break;
-      case ROTATE_180:
-        clickLocation.x = ui_.image_frame->getImage().width() - clickCanvasLocation.x;
-        clickLocation.y = ui_.image_frame->getImage().height() - clickCanvasLocation.y;
-        break;
-      case ROTATE_270:
-        clickLocation.x = ui_.image_frame->getImage().height() - clickCanvasLocation.y;
-        clickLocation.y = clickCanvasLocation.x;
-        break;
-      default:
-        break;
-    }
+    // switch(rotate_state_)
+    // {
+    //   case ROTATE_90:
+    //     clickLocation.x = clickCanvasLocation.y;
+    //     clickLocation.y = ui_.image_frame->getImage().width() - clickCanvasLocation.x;
+    //     break;
+    //   case ROTATE_180:
+    //     clickLocation.x = ui_.image_frame->getImage().width() - clickCanvasLocation.x;
+    //     clickLocation.y = ui_.image_frame->getImage().height() - clickCanvasLocation.y;
+    //     break;
+    //   case ROTATE_270:
+    //     clickLocation.x = ui_.image_frame->getImage().height() - clickCanvasLocation.y;
+    //     clickLocation.y = clickCanvasLocation.x;
+    //     break;
+    //   default:
+    //     break;
+    // }
 
     pub_mouse_left_->publish(clickLocation);
   }
 }
 
-void ImageView::onPubTopicChanged()
+void RRLImageView::onPubTopicChanged()
 {
-  pub_topic_custom_ = !(ui_.publish_click_location_topic_line_edit->text().isEmpty());
-  onMousePublish(ui_.publish_click_location_check_box->isChecked());
+  // pub_topic_custom_ = !(ui_.publish_click_location_topic_line_edit->text().isEmpty());
+  onMousePublish(true);
 }
 
-void ImageView::onHideToolbarChanged(bool hide)
+void RRLImageView::onHideToolbarChanged(bool hide)
 {
   ui_.toolbar_widget->setVisible(!hide);
 }
 
-void ImageView::onRotateLeft()
+void RRLImageView::onRotateLeft()
 {
   int m = rotate_state_ - 1;
   if(m < 0)
@@ -458,25 +459,25 @@ void ImageView::onRotateLeft()
   syncRotateLabel();
 }
 
-void ImageView::onRotateRight()
+void RRLImageView::onRotateRight()
 {
   rotate_state_ = static_cast<RotateState>((rotate_state_ + 1) % ROTATE_STATE_COUNT);
   syncRotateLabel();
 }
 
-void ImageView::syncRotateLabel()
+void RRLImageView::syncRotateLabel()
 {
-  switch(rotate_state_)
-  {
-    default:
-    case ROTATE_0:   ui_.rotate_label->setText("0°"); break;
-    case ROTATE_90:  ui_.rotate_label->setText("90°"); break;
-    case ROTATE_180: ui_.rotate_label->setText("180°"); break;
-    case ROTATE_270: ui_.rotate_label->setText("270°"); break;
-  }
+  // switch(rotate_state_)
+  // {
+  //   default:
+  //   case ROTATE_0:   ui_.rotate_label->setText("0°"); break;
+  //   case ROTATE_90:  ui_.rotate_label->setText("90°"); break;
+  //   case ROTATE_180: ui_.rotate_label->setText("180°"); break;
+  //   case ROTATE_270: ui_.rotate_label->setText("270°"); break;
+  // }
 }
 
-void ImageView::invertPixels(int x, int y)
+void RRLImageView::invertPixels(int x, int y)
 {
   // Could do 255-conversion_mat_.at<cv::Vec3b>(cv::Point(x,y))[i], but that doesn't work well on gray
   cv::Vec3b & pixel = conversion_mat_.at<cv::Vec3b>(cv::Point(x, y));
@@ -486,7 +487,7 @@ void ImageView::invertPixels(int x, int y)
     pixel = cv::Vec3b(255,255,255);
 }
 
-QList<int> ImageView::getGridIndices(int size) const
+QList<int> RRLImageView::getGridIndices(int size) const
 {
   QList<int> indices;
 
@@ -525,7 +526,7 @@ QList<int> ImageView::getGridIndices(int size) const
   return indices;
 }
 
-void ImageView::overlayGrid()
+void RRLImageView::overlayGrid()
 {
   // vertical gridlines
   QList<int> columns = getGridIndices(conversion_mat_.cols);
@@ -548,7 +549,7 @@ void ImageView::overlayGrid()
   }
 }
 
-void ImageView::callbackImage(const sensor_msgs::msg::Image::ConstSharedPtr& msg)
+void RRLImageView::callbackImage(const sensor_msgs::msg::Image::ConstSharedPtr& msg)
 {
   try
   {
@@ -591,14 +592,14 @@ void ImageView::callbackImage(const sensor_msgs::msg::Image::ConstSharedPtr& msg
         cv::Mat(cv_ptr->image-min).convertTo(img_scaled_8u, CV_8UC1, 255. / (max - min));
         cv::cvtColor(img_scaled_8u, conversion_mat_, CV_GRAY2RGB);
       } else {
-        qWarning("ImageView.callback_image() could not convert image from '%s' to 'rgb8' (%s)", msg->encoding.c_str(), e.what());
+        qWarning("RRLImageView.callback_image() could not convert image from '%s' to 'rgb8' (%s)", msg->encoding.c_str(), e.what());
         ui_.image_frame->setImage(QImage());
         return;
       }
     }
     catch (cv_bridge::Exception& e)
     {
-      qWarning("ImageView.callback_image() while trying to convert image from '%s' to 'rgb8' an exception was thrown (%s)", msg->encoding.c_str(), e.what());
+      qWarning("RRLImageView.callback_image() while trying to convert image from '%s' to 'rgb8' an exception was thrown (%s)", msg->encoding.c_str(), e.what());
       ui_.image_frame->setImage(QImage());
       return;
     }
@@ -646,4 +647,4 @@ void ImageView::callbackImage(const sensor_msgs::msg::Image::ConstSharedPtr& msg
 }
 }
 
-PLUGINLIB_EXPORT_CLASS(rqt_image_view::ImageView, rqt_gui_cpp::Plugin)
+PLUGINLIB_EXPORT_CLASS(rrl_image_view::RRLImageView, rqt_gui_cpp::Plugin)

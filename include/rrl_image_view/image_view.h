@@ -30,8 +30,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef rqt_image_view__ImageView_H
-#define rqt_image_view__ImageView_H
+#ifndef rrl_image_view__RRLImageView_H
+#define rrl_image_view__RRLImageView_H
 
 #include <rqt_gui_cpp/plugin.h>
 
@@ -55,9 +55,9 @@
 
 #include <vector>
 
-namespace rqt_image_view {
+namespace rrl_image_view {
 
-class ImageView
+class RRLImageView
   : public rqt_gui_cpp::Plugin
 {
 
@@ -65,7 +65,7 @@ class ImageView
 
 public:
 
-  ImageView();
+  RRLImageView();
 
   virtual void initPlugin(qt_gui_cpp::PluginContext& context);
 
@@ -118,7 +118,7 @@ protected:
 
   virtual void overlayGrid();
 
-  Ui::ImageViewWidget ui_;
+  Ui::RRLImageViewWidget ui_;
 
   QWidget* widget_;
 
@@ -154,4 +154,4 @@ private:
 
 }
 
-#endif // rqt_image_view__ImageView_H
+#endif // rrl_image_view__RRLImageView_H
