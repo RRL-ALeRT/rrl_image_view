@@ -42,6 +42,7 @@
 
 #include <sensor_msgs/msg/image.hpp>
 #include <geometry_msgs/msg/point.hpp>
+#include <world_info_msgs/msg/bounding_box_array.hpp>
 
 #include <opencv2/core/core.hpp>
 
@@ -111,6 +112,8 @@ protected slots:
 protected:
 
   virtual void callbackImage(const sensor_msgs::msg::Image::ConstSharedPtr& msg);
+  
+  virtual void callbackBoundingBox(const world_info_msgs::msg::BoundingBoxArray::SharedPtr msg);
 
   virtual void invertPixels(int x, int y);
 
@@ -123,6 +126,20 @@ protected:
   QWidget* widget_;
 
   image_transport::Subscriber subscriber_;
+
+  rclcpp::Subscription<world_info_msgs::msg::BoundingBoxArray>::SharedPtr bb_subscriber_;
+
+  struct BoundingBox
+  {
+    std::string text;
+    float x;
+    float y;
+    float width;
+    float height;
+  };
+
+  std::vector<BoundingBox> bounding_box_array;
+  std::unordered_map<std::string, std::vector<BoundingBox>> bounding_box_map;
 
   cv::Mat conversion_mat_;
 

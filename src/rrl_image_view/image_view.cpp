@@ -301,13 +301,19 @@ void RRLImageView::onTopicChanged(int index)
       auto subscription_options = rclcpp::SubscriptionOptions();
       // TODO(jacobperron): Enable once ROS CLI args are supported https://github.com/ros-visualization/rqt/issues/262
       // subscription_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
+      std::string image_topic = topic.toStdString();
+      // std::string bb_topic = image_topic + "/bounding_boxes";
       subscriber_ = image_transport::create_subscription(
         node_.get(),
-        topic.toStdString(),
+        image_topic,
         std::bind(&RRLImageView::callbackImage, this, std::placeholders::_1),
         hints.getTransport(),
         rmw_qos_profile_sensor_data,
         subscription_options);
+      bb_subscriber_ = node_->create_subscription<world_info_msgs::msg::BoundingBoxArray>(
+        image_topic + "/bb",
+        1,
+        std::bind(&RRLImageView::callbackBoundingBox, this, std::placeholders::_1));
       onPubTopicChanged();
       qDebug("RRLImageView::onTopicChanged() to topic '%s' with transport '%s'", topic.toStdString().c_str(), subscriber_.getTransport().c_str());
     } catch (image_transport::TransportLoadException& e) {
@@ -615,6 +621,49 @@ void RRLImageView::callbackImage(const sensor_msgs::msg::Image::ConstSharedPtr& 
 
   // image must be copied since it uses the conversion_mat_ for storage which is asynchronously overwritten in the next callback invocation
   QImage image(conversion_mat_.data, conversion_mat_.cols, conversion_mat_.rows, conversion_mat_.step[0], QImage::Format_RGB888);
+  
+  // Create a QPainter object and set it to operate on the image
+  QPainter painter(&image);
+  QPen pen(QColor(255, 0, 0)); // Create a pen with the bounding box color
+  pen.setWidth(2); // Set the pen width for the bounding box
+  painter.setPen(pen);
+  painter.setFont(QFont("Arial", 12)); // Set the font for the text
+
+  for (const auto& bb_array : bounding_box_map)
+  {
+    for (const auto& bb : bb_array.second)
+    {
+      // Define the bounding box coordinates
+      QRect boundingBox(bb.x, bb.y, bb.width, bb.height);
+
+      // Set the bounding box color
+      painter.setPen(QColor(255, 0, 0)); // Red color for the bounding box
+      
+      // Draw the bounding box
+      painter.drawRect(boundingBox);
+
+      // Define the text position within the bounding box
+      QPoint textPosition(boundingBox.left() + 5, boundingBox.top() - 5);
+
+      // Set the text color
+      painter.setPen(QColor(255, 255, 255)); // White color for the text
+
+      // Draw the text inside the bounding box
+      QString text = QString::fromStdString(bb.text);
+
+      // Set the background color for the text
+      QRect textBackground(boundingBox.left(), boundingBox.top() - 20, text.size() * 8 + 10, 20);
+      painter.fillRect(textBackground, QColor(0, 0, 0, 150)); // Black background with 150 transparency
+
+      // Draw the text
+      painter.drawText(textPosition, text);
+    }
+  }
+
+
+  // End painting
+  painter.end();
+
   ui_.image_frame->setImage(image);
 
   if (!ui_.zoom_1_push_button->isEnabled())
@@ -625,6 +674,26 @@ void RRLImageView::callbackImage(const sensor_msgs::msg::Image::ConstSharedPtr& 
   // though could check and see if the aspect ratio changed or not.
   onZoom1(ui_.zoom_1_push_button->isChecked());
 }
+
+void RRLImageView::callbackBoundingBox(const world_info_msgs::msg::BoundingBoxArray::SharedPtr msg)
+{
+  bounding_box_array.clear();
+  for (auto& bb: msg->array)
+  {
+    BoundingBox bb_qt;
+    // Convert bb.confidence to a string with up to 2 decimal places
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(2) << bb.confidence;
+    bb_qt.text = oss.str() + ":" + bb.name;
+    bb_qt.x = bb.cx;
+    bb_qt.y = bb.cy;
+    bb_qt.width = bb.width;
+    bb_qt.height = bb.height;
+    bounding_box_array.push_back(bb_qt);
+  }
+  bounding_box_map[msg->type] = bounding_box_array;
+}
+
 }
 
 PLUGINLIB_EXPORT_CLASS(rrl_image_view::RRLImageView, rqt_gui_cpp::Plugin)

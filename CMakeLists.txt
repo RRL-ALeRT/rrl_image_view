@@ -31,6 +31,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(Qt5Widgets REQUIRED)
 find_package(ament_cmake_python REQUIRED)
+find_package(world_info_msgs REQUIRED)
 
 set(rrl_image_view_SRCS
   src/rrl_image_view/image_view.cpp
@@ -68,6 +69,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
   ${sensor_msgs_TARGETS}
   ${geometry_msgs_TARGETS}
   Qt5::Widgets
+  ${world_info_msgs_TARGETS}
 )
 target_link_libraries(${PROJECT_NAME} PRIVATE
   cv_bridge::cv_bridge)
