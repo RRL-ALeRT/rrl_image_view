@@ -78,7 +78,7 @@
            <property name="lineWidth">
             <number>1</number>
            </property>
-           <widget class="QWidget" name="">
+           <widget class="QWidget" name="layoutWidget">
             <property name="geometry">
              <rect>
               <x>0</x>
@@ -190,6 +190,7 @@
             <zorder>save_as_image_push_button</zorder>
             <zorder>zoom_1_push_button</zorder>
             <zorder>topics_combo_box</zorder>
+            <zorder>reset_theora</zorder>
            </widget>
           </widget>
          </item>

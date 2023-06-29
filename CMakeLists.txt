@@ -66,6 +66,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
   ${qt_gui_cpp_TARGETS}
   ${rqt_gui_cpp_TARGETS}
   image_transport::image_transport
+  ${std_msgs_TARGETS}
   ${sensor_msgs_TARGETS}
   ${geometry_msgs_TARGETS}
   Qt5::Widgets

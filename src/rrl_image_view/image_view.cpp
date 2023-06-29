@@ -302,7 +302,6 @@ void RRLImageView::onTopicChanged(int index)
       // TODO(jacobperron): Enable once ROS CLI args are supported https://github.com/ros-visualization/rqt/issues/262
       // subscription_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
       std::string image_topic = topic.toStdString();
-      // std::string bb_topic = image_topic + "/bounding_boxes";
       subscriber_ = image_transport::create_subscription(
         node_.get(),
         image_topic,
@@ -314,6 +313,10 @@ void RRLImageView::onTopicChanged(int index)
         image_topic + "/bb",
         1,
         std::bind(&RRLImageView::callbackBoundingBox, this, std::placeholders::_1));
+      reset_pub_ = node_->create_publisher<std_msgs::msg::Header>(
+        image_topic + "/theora_reset",
+        1);
+      reset_pub_->publish(std_msgs::msg::Header());
       onPubTopicChanged();
       qDebug("RRLImageView::onTopicChanged() to topic '%s' with transport '%s'", topic.toStdString().c_str(), subscriber_.getTransport().c_str());
     } catch (image_transport::TransportLoadException& e) {
