@@ -628,9 +628,9 @@ void RRLImageView::callbackImage(const sensor_msgs::msg::Image::ConstSharedPtr& 
   // Create a QPainter object and set it to operate on the image
   QPainter painter(&image);
   QPen pen(QColor(255, 0, 0)); // Create a pen with the bounding box color
-  pen.setWidth(2); // Set the pen width for the bounding box
+  pen.setWidth(6); // Set the pen width for the bounding box
   painter.setPen(pen);
-  painter.setFont(QFont("Arial", 12)); // Set the font for the text
+  painter.setFont(QFont("Arial", 30)); // Set the font for the text
 
   for (const auto& bb_array : bounding_box_map)
   {
