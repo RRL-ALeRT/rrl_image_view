@@ -313,14 +313,12 @@ void RRLImageView::onTopicChanged(int index)
         image_topic + "/bb",
         1,
         std::bind(&RRLImageView::callbackBoundingBox, this, std::placeholders::_1));
-      reset_pub_ = node_->create_publisher<std_msgs::msg::Header>(
-        image_topic + "/theora_reset",
-        1);
-      reset_pub_->publish(std_msgs::msg::Header());
       onPubTopicChanged();
       qDebug("RRLImageView::onTopicChanged() to topic '%s' with transport '%s'", topic.toStdString().c_str(), subscriber_.getTransport().c_str());
     } catch (image_transport::TransportLoadException& e) {
       QMessageBox::warning(widget_, tr("Loading image transport plugin failed"), e.what());
+    } catch (const rclcpp::exceptions::RCLError& e) {
+      QMessageBox::warning(widget_, tr("Loading image transport plugin failed."), (static_cast<std::string>(e.what()) + "\nThis error occurs mostly when same topic is selected in another rqt image viewer, and by default image viewer believes it's of the type sensor_msgs/msg/Image. Deselect those in the image viewer.").c_str());
     }
   }
 

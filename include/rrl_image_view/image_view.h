@@ -40,7 +40,6 @@
 #include <image_transport/image_transport.hpp>
 #include <image_transport/subscriber.hpp>
 
-#include <std_msgs/msg/header.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <geometry_msgs/msg/point.hpp>
 #include <world_info_msgs/msg/bounding_box_array.hpp>
@@ -127,8 +126,6 @@ protected:
   QWidget* widget_;
 
   image_transport::Subscriber subscriber_;
-
-  rclcpp::Publisher<std_msgs::msg::Header>::SharedPtr reset_pub_;
 
   rclcpp::Subscription<world_info_msgs::msg::BoundingBoxArray>::SharedPtr bb_subscriber_;
 
