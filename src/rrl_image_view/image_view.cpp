@@ -326,6 +326,10 @@ void RRLImageView::onTopicChanged(int index)
         image_topic + "/bb",
         1,
         std::bind(&RRLImageView::callbackBoundingBox, this, std::placeholders::_1));
+      bp_subscriber_ = node_->create_subscription<world_info_msgs::msg::BoundingPolygonArray>(
+        image_topic + "/bp",
+        1,
+        std::bind(&RRLImageView::callbackBoundingPolygon, this, std::placeholders::_1));
       pub_mouse_left_ = node_->create_publisher<geometry_msgs::msg::Point>(image_topic + "/mouse", 1000);
       qDebug("RRLImageView::onTopicChanged() to topic '%s' with transport '%s'", topic.toStdString().c_str(), subscriber_.getTransport().c_str());
     } catch (image_transport::TransportLoadException& e) {
@@ -606,17 +610,37 @@ void RRLImageView::callbackImage(const sensor_msgs::msg::Image::ConstSharedPtr& 
   {
     for (const auto& bb : bb_array.second)
     {
+      // Ignore if bb data is older than 2 seconds
+      if (msg->header.stamp.sec > bb.time_second + 2) continue;
+
       // Define the bounding box coordinates
       cv::Rect boundingBox(bb.x, bb.y, bb.width, bb.height);
 
       // Draw the bounding box using OpenCV
-      cv::rectangle(conversion_mat_, boundingBox, (0, 255, 0), 6);
+      cv::rectangle(conversion_mat_, boundingBox, (0, 255, 0), 4);
 
       // Define the text position within the bounding box
       cv::Point textPosition(boundingBox.x + 5, boundingBox.y - 5);
 
       // Draw the text inside the bounding box using OpenCV
       cv::putText(conversion_mat_, bb.text, textPosition, cv::FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2);
+    }
+  }
+
+  // Draw polygon on the 'conversion_mat_' using OpenCV
+  for (const auto& bp_array : bounding_polygon_map)
+  {
+    for (const auto& bp : bp_array.second)
+    {
+      // Ignore if bp data is older than 2 seconds
+      if (msg->header.stamp.sec > bp.time_second + 2) continue;
+
+      const cv::Point *pts = (const cv::Point*) cv::Mat(bp.contour).data;
+      int npts = cv::Mat(bp.contour).rows;
+      cv::polylines(conversion_mat_, &pts, &npts, 1, true, cv::Scalar(255, 0, 0));
+
+      // Draw the text inside the polygon using OpenCV
+      cv::putText(conversion_mat_, bp.text, bp.contour[0], cv::FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2);
     }
   }
 
@@ -642,17 +666,52 @@ void RRLImageView::callbackBoundingBox(const world_info_msgs::msg::BoundingBoxAr
   for (auto& bb: msg->array)
   {
     BoundingBox bb_qt;
-    // Convert bb.confidence to a string with up to 2 decimal places
-    std::ostringstream oss;
-    oss << std::fixed << std::setprecision(2) << bb.confidence;
-    bb_qt.text = oss.str() + ":" + bb.name;
+    if (bb.confidence > 0)
+    {
+      // Convert bb.confidence to a string with up to 2 decimal places
+      std::ostringstream oss;
+      oss << std::fixed << std::setprecision(2) << bb.confidence;
+      bb_qt.text = oss.str() + ":" + bb.name;
+    }
+    else
+    {
+      bb_qt.text = bb.name;
+    }
     bb_qt.x = bb.cx;
     bb_qt.y = bb.cy;
     bb_qt.width = bb.width;
     bb_qt.height = bb.height;
+    bb_qt.time_second = msg->header.stamp.sec;
     bounding_box_array.push_back(bb_qt);
   }
   bounding_box_map[msg->type] = bounding_box_array;
+}
+
+void RRLImageView::callbackBoundingPolygon(const world_info_msgs::msg::BoundingPolygonArray::SharedPtr msg)
+{
+  bounding_polygon_array.clear();
+  for (auto& bp: msg->array)
+  {
+    BoundingPolygon bp_qt;
+    if (bp.confidence > 0)
+    {
+      // Convert bp.confidence to a string with up to 2 decimal places
+      std::ostringstream oss;
+      oss << std::fixed << std::setprecision(2) << bp.confidence;
+      bp_qt.text = oss.str() + ":" + bp.name;
+    }
+    else
+    {
+      bp_qt.text = bp.name;
+    }
+    for (auto& bp : bp.array)
+    {
+      bp_qt.contour.push_back(cv::Point(bp.x, bp.y));
+    }
+    bp_qt.time_second = msg->header.stamp.sec;
+    bounding_polygon_array.push_back(bp_qt);
+  }
+  bounding_polygon_map[msg->type] = bounding_polygon_array;
 }
 
 }

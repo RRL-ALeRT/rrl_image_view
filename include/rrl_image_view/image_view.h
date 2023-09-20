@@ -43,6 +43,7 @@
 #include <sensor_msgs/msg/image.hpp>
 #include <geometry_msgs/msg/point.hpp>
 #include <world_info_msgs/msg/bounding_box_array.hpp>
+#include <world_info_msgs/msg/bounding_polygon_array.hpp>
 
 #include <opencv2/core/core.hpp>
 
@@ -111,6 +112,8 @@ protected:
   
   virtual void callbackBoundingBox(const world_info_msgs::msg::BoundingBoxArray::SharedPtr msg);
 
+  virtual void callbackBoundingPolygon(const world_info_msgs::msg::BoundingPolygonArray::SharedPtr msg);
+
   virtual void invertPixels(int x, int y);
 
   QList<int> getGridIndices(int size) const;
@@ -125,6 +128,7 @@ protected:
   image_transport::Publisher republisher_;
   
   rclcpp::Subscription<world_info_msgs::msg::BoundingBoxArray>::SharedPtr bb_subscriber_;
+  rclcpp::Subscription<world_info_msgs::msg::BoundingPolygonArray>::SharedPtr bp_subscriber_;
   rclcpp::Publisher<geometry_msgs::msg::Point>::SharedPtr pub_mouse_left_;
 
   struct BoundingBox
@@ -134,10 +138,19 @@ protected:
     float y;
     float width;
     float height;
+    int time_second;
   };
-
   std::vector<BoundingBox> bounding_box_array;
   std::unordered_map<std::string, std::vector<BoundingBox>> bounding_box_map;
+
+  struct BoundingPolygon
+  {
+    std::string text;
+    std::vector<cv::Point> contour;
+    int time_second;
+  };
+  std::vector<BoundingPolygon> bounding_polygon_array;
+  std::unordered_map<std::string, std::vector<BoundingPolygon>> bounding_polygon_map;
 
   cv::Mat conversion_mat_;
 
