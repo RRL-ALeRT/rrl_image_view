@@ -209,6 +209,13 @@ void RRLImageView::updateTopicList()
   for (QList<QString>::const_iterator it = topics.begin(); it != topics.end(); it++)
   {
     QString label(*it);
+
+    // Check if the topic contains "compressedDepth", and if so, skip it
+    if (label.contains("compressedDepth") || label.contains("depth"))
+    {
+      continue; // Skip this topic and move to the next iteration
+    }
+
     label.replace(" ", "/");
     ui_.topics_combo_box->addItem(label, QVariant(*it));
   }
@@ -286,6 +293,7 @@ void RRLImageView::onTopicChanged(int index)
   conversion_mat_.release();
 
   subscriber_.shutdown();
+  pub_mouse_left_.reset();
 
   // reset image on topic change
   ui_.image_frame->setImage(QImage());
@@ -306,14 +314,19 @@ void RRLImageView::onTopicChanged(int index)
         node_.get(),
         image_topic,
         std::bind(&RRLImageView::callbackImage, this, std::placeholders::_1),
-        hints.getTransport(),
+        // hints.getTransport(),
+       "ffmpeg",
         rmw_qos_profile_sensor_data,
         subscription_options);
+      republisher_ = image_transport::create_publisher(
+        node_.get(),
+        image_topic + "/republished",
+        rmw_qos_profile_sensor_data);
       bb_subscriber_ = node_->create_subscription<world_info_msgs::msg::BoundingBoxArray>(
         image_topic + "/bb",
         1,
         std::bind(&RRLImageView::callbackBoundingBox, this, std::placeholders::_1));
-      onPubTopicChanged();
+      pub_mouse_left_ = node_->create_publisher<geometry_msgs::msg::Point>(image_topic + "/mouse", 1000);
       qDebug("RRLImageView::onTopicChanged() to topic '%s' with transport '%s'", topic.toStdString().c_str(), subscriber_.getTransport().c_str());
     } catch (image_transport::TransportLoadException& e) {
       QMessageBox::warning(widget_, tr("Loading image transport plugin failed"), e.what());
@@ -321,8 +334,6 @@ void RRLImageView::onTopicChanged(int index)
       QMessageBox::warning(widget_, tr("Loading image transport plugin failed."), (static_cast<std::string>(e.what()) + "\nThis error occurs mostly when same topic is selected in another rqt image viewer, and by default image viewer believes it's of the type sensor_msgs/msg/Image. Deselect those in the image viewer.").c_str());
     }
   }
-
-  // onMousePublish(ui_.publish_click_location_check_box->isChecked());
 }
 
 void RRLImageView::onZoom1(bool checked)
@@ -366,30 +377,6 @@ void RRLImageView::saveImage()
   img.save(file_name);
 }
 
-void RRLImageView::onMousePublish(bool checked)
-{
-  std::string topicName;
-  if(pub_topic_custom_)
-  {
-    // topicName = ui_.publish_click_location_topic_line_edit->text().toStdString();
-  } else {
-    if(!subscriber_.getTopic().empty())
-    {
-      topicName = subscriber_.getTopic()+"_mouse_left";
-    } else {
-      topicName = "mouse_left";
-    }
-    // ui_.publish_click_location_topic_line_edit->setText(QString::fromStdString(topicName));
-  }
-
-  if(checked)
-  {
-    pub_mouse_left_ = node_->create_publisher<geometry_msgs::msg::Point>(topicName, 1000);
-  } else {
-    pub_mouse_left_.reset();
-  }
-}
-
 void RRLImageView::onMouseLeft(int x, int y)
 {
   if(!ui_.image_frame->getImage().isNull())
@@ -422,12 +409,6 @@ void RRLImageView::onMouseLeft(int x, int y)
 
     pub_mouse_left_->publish(clickLocation);
   }
-}
-
-void RRLImageView::onPubTopicChanged()
-{
-  // pub_topic_custom_ = !(ui_.publish_click_location_topic_line_edit->text().isEmpty());
-  onMousePublish(true);
 }
 
 void RRLImageView::onHideToolbarChanged(bool hide)
@@ -620,50 +601,29 @@ void RRLImageView::callbackImage(const sensor_msgs::msg::Image::ConstSharedPtr& 
       break;
   }
 
-  // image must be copied since it uses the conversion_mat_ for storage which is asynchronously overwritten in the next callback invocation
-  QImage image(conversion_mat_.data, conversion_mat_.cols, conversion_mat_.rows, conversion_mat_.step[0], QImage::Format_RGB888);
-  
-  // Create a QPainter object and set it to operate on the image
-  QPainter painter(&image);
-  QPen pen(QColor(255, 0, 0)); // Create a pen with the bounding box color
-  pen.setWidth(6); // Set the pen width for the bounding box
-  painter.setPen(pen);
-  painter.setFont(QFont("Arial", 30)); // Set the font for the text
-
+  // Draw bounding boxes on the 'conversion_mat_' using OpenCV
   for (const auto& bb_array : bounding_box_map)
   {
     for (const auto& bb : bb_array.second)
     {
       // Define the bounding box coordinates
-      QRect boundingBox(bb.x, bb.y, bb.width, bb.height);
+      cv::Rect boundingBox(bb.x, bb.y, bb.width, bb.height);
 
-      // Set the bounding box color
-      painter.setPen(QColor(255, 0, 0)); // Red color for the bounding box
-      
-      // Draw the bounding box
-      painter.drawRect(boundingBox);
+      // Draw the bounding box using OpenCV
+      cv::rectangle(conversion_mat_, boundingBox, (0, 255, 0), 6);
 
       // Define the text position within the bounding box
-      QPoint textPosition(boundingBox.left() + 5, boundingBox.top() - 5);
+      cv::Point textPosition(boundingBox.x + 5, boundingBox.y - 5);
 
-      // Set the text color
-      painter.setPen(QColor(255, 255, 255)); // White color for the text
-
-      // Draw the text inside the bounding box
-      QString text = QString::fromStdString(bb.text);
-
-      // Set the background color for the text
-      QRect textBackground(boundingBox.left(), boundingBox.top() - 20, text.size() * 8 + 10, 20);
-      painter.fillRect(textBackground, QColor(0, 0, 0, 150)); // Black background with 150 transparency
-
-      // Draw the text
-      painter.drawText(textPosition, text);
+      // Draw the text inside the bounding box using OpenCV
+      cv::putText(conversion_mat_, bb.text, textPosition, cv::FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2);
     }
   }
 
+  republisher_.publish(cv_bridge::CvImage(msg->header, "rgb8", conversion_mat_).toImageMsg());
 
-  // End painting
-  painter.end();
+  // image must be copied since it uses the conversion_mat_ for storage which is asynchronously overwritten in the next callback invocation
+  QImage image(conversion_mat_.data, conversion_mat_.cols, conversion_mat_.rows, conversion_mat_.step[0], QImage::Format_RGB888);
 
   ui_.image_frame->setImage(image);
 

@@ -98,11 +98,7 @@ protected slots:
 
   virtual void updateNumGridlines();
 
-  virtual void onMousePublish(bool checked);
-
   virtual void onMouseLeft(int x, int y);
-
-  virtual void onPubTopicChanged();
 
   virtual void onHideToolbarChanged(bool hide);
 
@@ -126,8 +122,10 @@ protected:
   QWidget* widget_;
 
   image_transport::Subscriber subscriber_;
-
+  image_transport::Publisher republisher_;
+  
   rclcpp::Subscription<world_info_msgs::msg::BoundingBoxArray>::SharedPtr bb_subscriber_;
+  rclcpp::Publisher<geometry_msgs::msg::Point>::SharedPtr pub_mouse_left_;
 
   struct BoundingBox
   {
@@ -157,8 +155,6 @@ private:
   void syncRotateLabel();
 
   QString arg_topic_name;
-
-  rclcpp::Publisher<geometry_msgs::msg::Point>::SharedPtr pub_mouse_left_;
 
   bool pub_topic_custom_;
 
