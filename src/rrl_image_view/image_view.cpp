@@ -330,6 +330,10 @@ void RRLImageView::onTopicChanged(int index)
         image_topic + "/bp",
         1,
         std::bind(&RRLImageView::callbackBoundingPolygon, this, std::placeholders::_1));
+      kp_subscriber_ = node_->create_subscription<world_info_msgs::msg::KeypointsArray>(
+        image_topic + "/kp",
+        1,
+        std::bind(&RRLImageView::callbackKeypoints, this, std::placeholders::_1));
       pub_mouse_left_ = node_->create_publisher<geometry_msgs::msg::Point>(image_topic + "/mouse", 1000);
       qDebug("RRLImageView::onTopicChanged() to topic '%s' with transport '%s'", topic.toStdString().c_str(), subscriber_.getTransport().c_str());
     } catch (image_transport::TransportLoadException& e) {
@@ -617,7 +621,7 @@ void RRLImageView::callbackImage(const sensor_msgs::msg::Image::ConstSharedPtr& 
       cv::Rect boundingBox(bb.x, bb.y, bb.width, bb.height);
 
       // Draw the bounding box using OpenCV
-      cv::rectangle(conversion_mat_, boundingBox, (0, 255, 0), 4);
+      cv::rectangle(conversion_mat_, boundingBox, (255, 0, 0), 4);
 
       // Define the text position within the bounding box
       cv::Point textPosition(boundingBox.x + 5, boundingBox.y - 5);
@@ -641,6 +645,21 @@ void RRLImageView::callbackImage(const sensor_msgs::msg::Image::ConstSharedPtr& 
 
       // Draw the text inside the polygon using OpenCV
       cv::putText(conversion_mat_, bp.text, bp.contour[0], cv::FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2);
+    }
+  }
+
+  // Draw keypoinys on the 'conversion_mat_' using OpenCV
+  for (const auto& kp_array : keypoints_map)
+  {
+    for (const auto& kp : kp_array.second)
+    {
+      // Ignore if kp data is older than 2 seconds
+      if (msg->header.stamp.sec > kp.time_second + 2) continue;
+
+      // Draw each point as a visible marker
+      for (const cv::Point& point : kp.keypoints) {
+        cv::drawMarker(conversion_mat_, point, cv::Scalar(255, 0, 0), cv::MARKER_CROSS, 20, 2, cv::LINE_AA);
+      }
     }
   }
 
@@ -712,6 +731,22 @@ void RRLImageView::callbackBoundingPolygon(const world_info_msgs::msg::BoundingP
     bounding_polygon_array.push_back(bp_qt);
   }
   bounding_polygon_map[msg->type] = bounding_polygon_array;
+}
+
+void RRLImageView::callbackKeypoints(const world_info_msgs::msg::KeypointsArray::SharedPtr msg)
+{
+  keypoints_array.clear();
+  for (auto& kp: msg->array)
+  {
+    Keypoints kp_qt;
+    for (auto& kp : kp.array)
+    {
+      kp_qt.keypoints.push_back(cv::Point(kp.x, kp.y));
+    }
+    kp_qt.time_second = msg->header.stamp.sec;
+    keypoints_array.push_back(kp_qt);
+  }
+  keypoints_map[msg->type] = keypoints_array;
 }
 
 }
