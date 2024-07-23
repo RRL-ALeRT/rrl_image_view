@@ -415,7 +415,11 @@ void RRLImageView::onMouseLeft(int x, int y)
 
     // Create and show the enlarged image window
     QPixmap originalPixmap = QPixmap::fromImage(ui_.image_frame->getImage());
-    EnlargedImageWindow *enlargedWindow = new EnlargedImageWindow(originalPixmap);
+
+    // Resize the pixmap to the desired height while maintaining the aspect ratio
+    QPixmap resizedPixmap = originalPixmap.scaledToHeight(600, Qt::SmoothTransformation);
+
+    EnlargedImageWindow *enlargedWindow = new EnlargedImageWindow(resizedPixmap);
     enlargedWindow->show();
   }
 }

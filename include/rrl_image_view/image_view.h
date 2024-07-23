@@ -85,11 +85,6 @@ public:
 
     setCentralWidget(centralWidget);
     setWindowTitle("Enlarged Image");
-
-    // Calculate the aspect ratio and adjust the width based on a height of 600
-    int newHeight = 600;
-    int newWidth = static_cast<int>(newHeight * pixmap.width() / static_cast<double>(pixmap.height()));
-    resize(newWidth, newHeight);
   }
 
 protected:
