@@ -44,6 +44,7 @@
 #include <geometry_msgs/msg/point.hpp>
 #include <world_info_msgs/msg/bounding_box_array.hpp>
 #include <world_info_msgs/msg/bounding_polygon_array.hpp>
+#include <world_info_msgs/msg/keypoints_array.hpp>
 
 #include <opencv2/core/core.hpp>
 
@@ -114,6 +115,8 @@ protected:
 
   virtual void callbackBoundingPolygon(const world_info_msgs::msg::BoundingPolygonArray::SharedPtr msg);
 
+  virtual void callbackKeypoints(const world_info_msgs::msg::KeypointsArray::SharedPtr msg);
+
   virtual void invertPixels(int x, int y);
 
   QList<int> getGridIndices(int size) const;
@@ -129,6 +132,7 @@ protected:
   
   rclcpp::Subscription<world_info_msgs::msg::BoundingBoxArray>::SharedPtr bb_subscriber_;
   rclcpp::Subscription<world_info_msgs::msg::BoundingPolygonArray>::SharedPtr bp_subscriber_;
+  rclcpp::Subscription<world_info_msgs::msg::KeypointsArray>::SharedPtr kp_subscriber_;
   rclcpp::Publisher<geometry_msgs::msg::Point>::SharedPtr pub_mouse_left_;
 
   struct BoundingBox
@@ -151,6 +155,14 @@ protected:
   };
   std::vector<BoundingPolygon> bounding_polygon_array;
   std::unordered_map<std::string, std::vector<BoundingPolygon>> bounding_polygon_map;
+
+  struct Keypoints
+  {
+    std::vector<cv::Point> keypoints;
+    int time_second;
+  };
+  std::vector<Keypoints> keypoints_array;
+  std::unordered_map<std::string, std::vector<Keypoints>> keypoints_map;
 
   cv::Mat conversion_mat_;
 
