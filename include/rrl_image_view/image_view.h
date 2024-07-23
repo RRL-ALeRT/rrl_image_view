@@ -58,7 +58,47 @@
 
 #include <vector>
 
+#include <QMainWindow>
+#include <QLabel>
+#include <QPixmap>
+#include <QVBoxLayout>
+#include <geometry_msgs/msg/point.hpp>
+
 namespace rrl_image_view {
+
+class EnlargedImageWindow : public QMainWindow
+{
+  Q_OBJECT
+
+public:
+  EnlargedImageWindow(const QPixmap &pixmap, QWidget *parent = nullptr)
+      : QMainWindow(parent)
+  {
+    QLabel *label = new QLabel(this);
+    label->setPixmap(pixmap);
+
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->addWidget(label);
+
+    QWidget *centralWidget = new QWidget(this);
+    centralWidget->setLayout(layout);
+
+    setCentralWidget(centralWidget);
+    setWindowTitle("Enlarged Image");
+
+    // Calculate the aspect ratio and adjust the width based on a height of 600
+    int newHeight = 600;
+    int newWidth = static_cast<int>(newHeight * pixmap.width() / static_cast<double>(pixmap.height()));
+    resize(newWidth, newHeight);
+  }
+
+protected:
+  void mousePressEvent(QMouseEvent *event) override
+  {
+    QMainWindow::mousePressEvent(event);
+    close(); // Close the window on tap
+  }
+};
 
 class RRLImageView
   : public rqt_gui_cpp::Plugin
@@ -128,7 +168,6 @@ protected:
   QWidget* widget_;
 
   image_transport::Subscriber subscriber_;
-  image_transport::Publisher republisher_;
   
   rclcpp::Subscription<world_info_msgs::msg::BoundingBoxArray>::SharedPtr bb_subscriber_;
   rclcpp::Subscription<world_info_msgs::msg::BoundingPolygonArray>::SharedPtr bp_subscriber_;

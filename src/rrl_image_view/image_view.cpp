@@ -318,10 +318,6 @@ void RRLImageView::onTopicChanged(int index)
        "ffmpeg",
         rmw_qos_profile_sensor_data,
         subscription_options);
-      republisher_ = image_transport::create_publisher(
-        node_.get(),
-        image_topic + "/republished",
-        rmw_qos_profile_sensor_data);
       bb_subscriber_ = node_->create_subscription<world_info_msgs::msg::BoundingBoxArray>(
         image_topic + "/bb",
         1,
@@ -416,6 +412,11 @@ void RRLImageView::onMouseLeft(int x, int y)
     // }
 
     pub_mouse_left_->publish(clickLocation);
+
+    // Create and show the enlarged image window
+    QPixmap originalPixmap = QPixmap::fromImage(ui_.image_frame->getImage());
+    EnlargedImageWindow *enlargedWindow = new EnlargedImageWindow(originalPixmap);
+    enlargedWindow->show();
   }
 }
 
@@ -662,8 +663,6 @@ void RRLImageView::callbackImage(const sensor_msgs::msg::Image::ConstSharedPtr& 
       }
     }
   }
-
-  republisher_.publish(cv_bridge::CvImage(msg->header, "rgb8", conversion_mat_).toImageMsg());
 
   // image must be copied since it uses the conversion_mat_ for storage which is asynchronously overwritten in the next callback invocation
   QImage image(conversion_mat_.data, conversion_mat_.cols, conversion_mat_.rows, conversion_mat_.step[0], QImage::Format_RGB888);
