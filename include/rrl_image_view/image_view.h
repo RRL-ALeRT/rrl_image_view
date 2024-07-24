@@ -62,6 +62,9 @@
 #include <QLabel>
 #include <QPixmap>
 #include <QVBoxLayout>
+#include <QApplication>
+#include <QDesktopWidget>
+
 #include <geometry_msgs/msg/point.hpp>
 
 namespace rrl_image_view {
@@ -71,14 +74,11 @@ class EnlargedImageWindow : public QMainWindow
   Q_OBJECT
 
 public:
-  EnlargedImageWindow(const QPixmap &pixmap, QWidget *parent = nullptr)
-      : QMainWindow(parent)
+  EnlargedImageWindow(QWidget *parent = nullptr)
+      : QMainWindow(parent), label_(new QLabel(this))
   {
-    QLabel *label = new QLabel(this);
-    label->setPixmap(pixmap);
-
     QVBoxLayout *layout = new QVBoxLayout;
-    layout->addWidget(label);
+    layout->addWidget(label_);
 
     QWidget *centralWidget = new QWidget(this);
     centralWidget->setLayout(layout);
@@ -86,8 +86,19 @@ public:
     setCentralWidget(centralWidget);
     setWindowTitle("Enlarged Image");
 
-    // Calculate the aspect ratio and adjust the width based on a height of 600
-    int newHeight = 600;
+    // Set initial size
+    resize(700, 700);
+
+    // Move the window to the right edge of the screen
+    moveToRightEdge();
+  }
+
+  void updatePixmap(const QPixmap &pixmap)
+  {
+    label_->setPixmap(pixmap);
+
+    // Calculate the aspect ratio and adjust the width based on a height of 700
+    int newHeight = 700;
     int newWidth = static_cast<int>(newHeight * pixmap.width() / static_cast<double>(pixmap.height()));
     resize(newWidth, newHeight);
   }
@@ -97,6 +108,17 @@ protected:
   {
     QMainWindow::mousePressEvent(event);
     close(); // Close the window on tap
+  }
+
+private:
+  QLabel *label_;
+
+  void moveToRightEdge()
+  {
+    QRect screenGeometry = QApplication::desktop()->availableGeometry(this);
+    int x = screenGeometry.width() - width();
+    int y = (screenGeometry.height() - height()) / 2; // Center vertically
+    move(x, y);
   }
 };
 
@@ -227,6 +249,8 @@ private:
   int num_gridlines_;
 
   RotateState rotate_state_;
+
+  EnlargedImageWindow *enlargedWindow_; // Pointer to the enlarged image window
 };
 
 }

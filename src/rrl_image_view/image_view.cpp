@@ -49,6 +49,7 @@ RRLImageView::RRLImageView()
   , widget_(0)
   , num_gridlines_(0)
   , rotate_state_(ROTATE_0)
+  , enlargedWindow_(nullptr)
 {
   setObjectName("RRLImageView");
 }
@@ -115,12 +116,19 @@ void RRLImageView::initPlugin(qt_gui_cpp::PluginContext& context)
   hide_toolbar_action_->setCheckable(true);
   ui_.image_frame->addAction(hide_toolbar_action_);
   connect(hide_toolbar_action_, SIGNAL(toggled(bool)), this, SLOT(onHideToolbarChanged(bool)));
+
+  enlargedWindow_ = new EnlargedImageWindow();
 }
 
 void RRLImageView::shutdownPlugin()
 {
   subscriber_.shutdown();
   pub_mouse_left_.reset();
+
+  if (enlargedWindow_) {
+    delete enlargedWindow_;
+    enlargedWindow_ = nullptr;
+  }
 }
 
 void RRLImageView::saveSettings(qt_gui_cpp::Settings& plugin_settings, qt_gui_cpp::Settings& instance_settings) const
@@ -413,10 +421,17 @@ void RRLImageView::onMouseLeft(int x, int y)
 
     pub_mouse_left_->publish(clickLocation);
 
-    // Create and show the enlarged image window
+    // Update the enlarged image window
     QPixmap originalPixmap = QPixmap::fromImage(ui_.image_frame->getImage());
-    EnlargedImageWindow *enlargedWindow = new EnlargedImageWindow(originalPixmap);
-    enlargedWindow->show();
+
+    // Resize the pixmap to the desired height while maintaining the aspect ratio
+    QPixmap resizedPixmap = originalPixmap.scaledToHeight(700, Qt::SmoothTransformation);
+
+    // Create and show the enlarged image window
+    if (enlargedWindow_) {
+      enlargedWindow_->updatePixmap(resizedPixmap);
+      enlargedWindow_->show();
+    }
   }
 }
 
@@ -676,6 +691,16 @@ void RRLImageView::callbackImage(const sensor_msgs::msg::Image::ConstSharedPtr& 
   // Need to update the zoom 1 every new image in case the image aspect ratio changed,
   // though could check and see if the aspect ratio changed or not.
   onZoom1(ui_.zoom_1_push_button->isChecked());
+
+  // Update the enlarged image if the window is visible
+  if (enlargedWindow_ && enlargedWindow_->isVisible()) {
+    QPixmap originalPixmap = QPixmap::fromImage(image);
+
+    // Resize the pixmap to the desired height while maintaining the aspect ratio
+    QPixmap resizedPixmap = originalPixmap.scaledToHeight(700, Qt::SmoothTransformation);
+
+    enlargedWindow_->updatePixmap(resizedPixmap);
+  }
 }
 
 void RRLImageView::callbackBoundingBox(const world_info_msgs::msg::BoundingBoxArray::SharedPtr msg)
