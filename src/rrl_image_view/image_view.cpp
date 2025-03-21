@@ -323,7 +323,7 @@ void RRLImageView::onTopicChanged(int index)
         image_topic,
         std::bind(&RRLImageView::callbackImage, this, std::placeholders::_1),
         // hints.getTransport(),
-       "ffmpeg",
+       "abr_ffmpeg",
         rmw_qos_profile_sensor_data,
         subscription_options);
       bb_subscriber_ = node_->create_subscription<world_info_msgs::msg::BoundingBoxArray>(
