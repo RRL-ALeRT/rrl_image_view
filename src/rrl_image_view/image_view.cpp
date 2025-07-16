@@ -188,6 +188,7 @@ void RRLImageView::updateTopicList()
   QSet<QString> message_sub_types;
   message_sub_types.insert("sensor_msgs/CompressedImage");
   message_sub_types.insert("sensor_msgs/msg/CompressedImage");
+  message_sub_types.insert("unitree_go/msg/Go2FrontVideoData");
 
   // get declared transports
   QList<QString> transports;
@@ -310,6 +311,15 @@ void RRLImageView::onTopicChanged(int index)
   QString topic = parts.first();
   QString transport = parts.length() == 2 ? parts.last() : "raw";
 
+  if (transport.contains("frontvideostream")) {
+      RCLCPP_INFO(node_->get_logger(), "Subscribing to frontvideostream");
+      topic = "/frontvideostream";
+      transport = "go2";
+  } else {
+      RCLCPP_INFO(node_->get_logger(), "Subscribing to topic '%s' with transport '%s'", 
+                  topic.toStdString().c_str(), transport.toStdString().c_str());
+  }
+
   if (!topic.isEmpty())
   {
     const image_transport::TransportHints hints(node_.get(), transport.toStdString());
@@ -318,14 +328,26 @@ void RRLImageView::onTopicChanged(int index)
       // TODO(jacobperron): Enable once ROS CLI args are supported https://github.com/ros-visualization/rqt/issues/262
       // subscription_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
       std::string image_topic = topic.toStdString();
-      subscriber_ = image_transport::create_subscription(
-        node_.get(),
-        image_topic,
-        std::bind(&RRLImageView::callbackImage, this, std::placeholders::_1),
-        // hints.getTransport(),
-       "ffmpeg",
-        rmw_qos_profile_sensor_data,
-        subscription_options);
+      if (image_topic.find("frontvideostream") != std::string::npos) {
+        RCLCPP_INFO(node_->get_logger(), "Subscribing to frontvideostream");
+        subscriber_ = image_transport::create_subscription(
+          node_.get(),
+          "/frontvideostream",
+          std::bind(&RRLImageView::callbackImage, this, std::placeholders::_1),
+          // hints.getTransport(),
+          "go2",
+          rmw_qos_profile_sensor_data,
+          subscription_options);
+      } else {
+        subscriber_ = image_transport::create_subscription(
+          node_.get(),
+          image_topic,
+          std::bind(&RRLImageView::callbackImage, this, std::placeholders::_1),
+          // hints.getTransport(),
+          "compressed",
+          rmw_qos_profile_sensor_data,
+          subscription_options);
+      }
       bb_subscriber_ = node_->create_subscription<world_info_msgs::msg::BoundingBoxArray>(
         image_topic + "/bb",
         1,
